@@ -4,6 +4,7 @@ import pyttsx3
 from ollama import chat
 from ollama import ChatResponse
 from RealtimeSTT import AudioToTextRecorder
+from BERT import BERT
 
 def STT():
     print("Wait until it says 'speak now'")
@@ -18,7 +19,7 @@ def STT():
         try:
             recorder.text(process_text)
 
-            if transcribed_text == 'Good day to you.':
+            if transcribed_text.lower() == 'turn off.':
                 recorder.shutdown()
                 sys.exit()
             else:
