@@ -1,0 +1,7 @@
+1/ Fix the "SearchInternet":
+    - "function": "extensions.searchInternet.handle" ???????
+    - print out the thing that tou are searching for
+
+2/ Fix the "PlayMusic" and "PlaySpecificMusic"
+    - print out the music that it is about to play
+    - If "PlayMusic" then play random music else "PlaySpecificMusic"
