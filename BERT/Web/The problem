@@ -1,0 +1,5 @@
+1/ The web scraping is very off. It only scrape the first result for some reason eventhough I set it to scrape the top 10
+2/ The prompt for search_or_not in the assist_mes.py needs to be optimized because it has poor desicion on weather the
+user is indicating that it should go to the internet or not
+3/ The scraping is somehow scraping unrealted data from the internet. For example if I ask it who is the greatest player
+in League of Legends in 2024, it would find the best champion to play in League in 2024. Very questionable!
