@@ -1,3 +1,5 @@
+import sys
+
 from ollama import chat
 import assist_mes
 import requests
@@ -105,8 +107,8 @@ def best_search(results, search_query):
             # print(response)
             return best_index
         except Exception as e:
-            print(f"Error in best_search attempt: {e}")
-
+            # print(f"Error in best_search attempt: {e}")
+            continue
     return 0
 
 
@@ -133,7 +135,7 @@ def scrape_webpage(url):
             paragraphs = soup.find_all('p')
             text_bs = "\n".join([p.get_text(strip=True) for p in paragraphs])
 
-            if text_bs is not None and text_bs.strip() is not None:
+            if text_bs and text_bs.strip():
                 print("Method: BeautifulSoup")
                 return text_bs, url
     except Exception as e:
@@ -142,11 +144,11 @@ def scrape_webpage(url):
         pass
 
 
-def contains_needed_data(page_text, data):
+def contains_needed_data(page_text, search_query):
     last_user_prompt = user_prompt[-1]
     if not last_user_prompt:
         last_user_prompt = "No user prompt available."
-    needed_data_mes = f"Page Text: {page_text}\nUser prompt: {last_user_prompt}\nSearch query: {data}"
+    needed_data_mes = f"Page Text: {page_text}\nUser prompt: {last_user_prompt}\nSearch query: {search_query}"
 
     assist_mes.contains_data['content'] += needed_data_mes
     response: ChatResponse = chat(
@@ -166,9 +168,9 @@ def search():
     search_query = query_generator()
     search_results = OperaGX(search_query)
     context = None
-    for i in range(len(search_results)):
+    for i in range(1):
         best_index = best_search(search_results, search_query)
-        print(best_index)
+
         try:
             page_link = search_results[-1]["link"]
 
@@ -178,57 +180,59 @@ def search():
         except Exception as e:
             print(f"Error selecting best result: {e}")
             break
-
         url = extract_target_url(page_link)
         page_text, link = scrape_webpage(url)
-
-        print('-----------------------------------------')
         # Remove the used result from the list.
-        if page_text and contains_needed_data(page_text, search_query) == 'true':
+        if page_text and contains_needed_data(page_text, search_query):
             context = page_text
             break
-        print(f'Content: {context}')
+    print(f'Content: {context}')
     return context
 
-def stream_assistant_response():
+def stream_assistant_response(user_input):
+    assist_mes.normal_conver['content'] += '"user": ' + user_input
     response: ChatResponse = chat(
         model="llama3.2:3b",
         messages=[{
             'role': 'user',
-            'content': assist_mes.assistance_messages['content']
+            'content': assist_mes.normal_conver['content']
         }],
         stream=True
     )
 
+
     complete_response = ""
     for chunk in response:
         chunk_text = chunk.message.content
-        print(chunk_text, end="", flush=True)
         complete_response += chunk_text
     # Use the valid role "assistant" here.
-    model_answer.append(complete_response)
-    print("\n")
+    print(f"Assistant: {complete_response}\n")
+    assist_mes.normal_conver['content'] += '"you": ' + complete_response
+    if complete_response == 'Good day to you.':
+        sys.exit()
 
 def main():
     while True:
         user_input = input("User: ").strip()
+        # search_or_not1 = input('Do you want to search? (y/n) ')
         if not user_input:
             continue
         # Append the new user prompt.
         user_prompt.append(user_input)
-        if search_or_not(user_input):
-            print("Search required...")
-            context = search()
-            if context:
-                user_input = f"Search result: {context}\nUser prompt: {user_input}"
-            else:
-                user_input = (
-                    f"User prompt: {user_input}\nSearch failed: The search did not yield reliable data. "
-                    "Proceed without additional context."
-                )
-            # Replace the last user message with the updated version.
-            user_prompt[-1] = user_input
-        stream_assistant_response()
+
+        # if search_or_not1 == 'y':
+        #     context = search()
+        #     if context:
+        #         user_input = f"Search result: {context}\nUser prompt: {user_input}"
+        #     else:
+        #         user_input = (
+        #             f"User prompt: {user_input}\nSearch failed: The search did not yield reliable data. "
+        #             "Proceed without additional context."
+        #         )
+        #     # Replace the last user message with the updated version.
+        #     user_prompt[-1] = user_input
+
+        stream_assistant_response(user_input)
 
 if __name__ == "__main__":
     main()
